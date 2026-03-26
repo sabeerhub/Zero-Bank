@@ -46,8 +46,7 @@ export default function Transfer() {
     setError('');
     
     try {
-      const q = query(collection(db, 'users'), where('accountNumber', '==', accNum));
-      const querySnapshot = await getDocs(q);
+      const q = query(collection(db, 'users'), where('accountNumber', '==', accNum), limit(1));
       
       if (!querySnapshot.empty) {
         const userDoc = querySnapshot.docs[0];
