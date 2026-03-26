@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A banking user profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "accountNumber": { "type": "string", "description": "10-digit account number" },
+        "balance": { "type": "number", "description": "Current balance in NGN" },
+        "pin": { "type": "string", "description": "4-digit transaction PIN" },
+        "username": { "type": "string", "description": "Optional unique username" },
+        "tier": { "type": "number", "description": "Account tier (1, 2, or 3)" },
+        "loanBalance": { "type": "number", "description": "Outstanding loan balance" },
+        "isCardFrozen": { "type": "boolean", "description": "Whether the virtual card is frozen" },
+        "onlinePaymentsEnabled": { "type": "boolean", "description": "Whether online payments are enabled" },
+        "cardSpendingLimit": { "type": "number", "description": "Monthly card spending limit" },
+        "notificationsEnabled": { "type": "boolean", "description": "Whether notifications are enabled" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation date" }
+      },
+      "required": ["uid", "name", "email", "accountNumber", "balance", "pin", "createdAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID of the user who owns this transaction" },
+        "type": { "type": "string", "enum": ["credit", "debit"], "description": "Transaction type" },
+        "amount": { "type": "number", "description": "Transaction amount" },
+        "category": { "type": "string", "enum": ["transfer", "airtime", "data", "electricity", "bills", "interbank"], "description": "Transaction category" },
+        "description": { "type": "string", "description": "Transaction description" },
+        "date": { "type": "string", "format": "date-time", "description": "Transaction date" },
+        "status": { "type": "string", "enum": ["success", "pending", "failed"], "description": "Transaction status" },
+        "reference": { "type": "string", "description": "Unique reference" },
+        "recipientName": { "type": "string", "description": "Recipient name (if applicable)" },
+        "recipientAccount": { "type": "string", "description": "Recipient account number (if applicable)" }
+      },
+      "required": ["userId", "type", "amount", "category", "description", "date", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A user notification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID of the user who owns this notification" },
+        "title": { "type": "string", "description": "Notification title" },
+        "message": { "type": "string", "description": "Notification message" },
+        "type": { "type": "string", "enum": ["transaction", "system", "alert"], "description": "Notification type" },
+        "read": { "type": "boolean", "description": "Whether the notification has been read" },
+        "date": { "type": "string", "format": "date-time", "description": "Notification date" },
+        "link": { "type": "string", "description": "Optional link to navigate to" }
+      },
+      "required": ["userId", "title", "message", "type", "read", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles and balances"
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Stores all financial transactions"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Stores user notifications"
+    }
+  }
+}

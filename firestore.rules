@@ -1,0 +1,160 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (Auth UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - accountNumber: string (required, 10 digits)
+    //   - balance: number (required)
+    //   - pin: string (required, 4 digits)
+    //   - username: string (optional)
+    //   - tier: number (optional, 1-3)
+    //   - loanBalance: number (optional)
+    //   - isCardFrozen: boolean (optional)
+    //   - onlinePaymentsEnabled: boolean (optional)
+    //   - cardSpendingLimit: number (optional)
+    //   - notificationsEnabled: boolean (optional)
+    //   - createdAt: string (required, ISO 8601)
+    //
+    // Collection: transactions
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required)
+    //   - type: string (required, 'credit' or 'debit')
+    //   - amount: number (required, positive)
+    //   - category: string (required)
+    //   - description: string (required)
+    //   - date: string (required, ISO 8601)
+    //   - status: string (required, 'success', 'pending', 'failed')
+    //   - reference: string (optional)
+    //   - recipientName: string (optional)
+    //   - recipientAccount: string (optional)
+    //
+    // Collection: notifications
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required)
+    //   - title: string (required)
+    //   - message: string (required)
+    //   - type: string (required, 'transaction', 'system', 'alert')
+    //   - read: boolean (required)
+    //   - date: string (required, ISO 8601)
+    //   - link: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "mustaphaabdulsalam1666@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'accountNumber', 'balance', 'pin', 'createdAt']) &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.email.matches('^.+@.+\\..+$') &&
+             data.accountNumber is string && data.accountNumber.matches('^\\d{10}$') &&
+             data.balance is number &&
+             data.pin is string && data.pin.matches('^\\d{4}$') &&
+             (!('username' in data) || (data.username is string && data.username.size() < 30)) &&
+             (!('tier' in data) || (data.tier is number && data.tier >= 1 && data.tier <= 3)) &&
+             (!('loanBalance' in data) || data.loanBalance is number) &&
+             (!('isCardFrozen' in data) || data.isCardFrozen is bool) &&
+             (!('onlinePaymentsEnabled' in data) || data.onlinePaymentsEnabled is bool) &&
+             (!('cardSpendingLimit' in data) || data.cardSpendingLimit is number) &&
+             (!('notificationsEnabled' in data) || data.notificationsEnabled is bool) &&
+             data.createdAt is string;
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['userId', 'type', 'amount', 'category', 'description', 'date', 'status']) &&
+             data.userId is string &&
+             data.type in ['credit', 'debit'] &&
+             data.amount is number && data.amount > 0 &&
+             data.category is string &&
+             data.description is string && data.description.size() < 500 &&
+             data.date is string &&
+             data.status in ['success', 'pending', 'failed'];
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['userId', 'title', 'message', 'type', 'read', 'date']) &&
+             data.userId is string &&
+             data.title is string && data.title.size() < 100 &&
+             data.message is string && data.message.size() < 500 &&
+             data.type in ['transaction', 'system', 'alert'] &&
+             data.read is bool &&
+             data.date is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Allow individual user to read their own profile
+      // Allow searching for a user by account number (for transfers)
+      allow read: if isAuthenticated() && (isOwner(userId) || (request.query.limit == 1 && request.query.filters.accountNumber != null));
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data);
+      
+      // Updates are allowed for the owner, but we must protect critical fields
+      // and ensure balance changes are only allowed via transfers (which are batch writes)
+      // or specific actions like loan disbursement.
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && isValidUser(request.resource.data) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.accountNumber == resource.data.accountNumber &&
+        request.resource.data.createdAt == resource.data.createdAt) ||
+        // Allow crediting someone else's balance (for transfers)
+        (request.resource.data.balance > resource.data.balance && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']))
+      ) || isAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      // Users can only see their own transactions
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Transactions are usually created via batch writes in the app
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || request.resource.data.type == 'credit' || isAdmin()) && isValidTransaction(request.resource.data);
+      
+      // Transactions should be immutable except for category
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && 
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['category']) &&
+                    isValidTransaction(request.resource.data);
+      
+      allow delete: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || request.resource.data.type == 'transaction' || isAdmin()) && isValidNotification(request.resource.data);
+      
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && 
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
+                    isValidNotification(request.resource.data);
+                    
+      allow delete: if false;
+    }
+  }
+}
