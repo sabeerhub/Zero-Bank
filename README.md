@@ -8,8 +8,6 @@
 
 Zero Bank is a modern, premium, mobile-first banking web application built with React, TypeScript, Tailwind CSS, and Firebase. It provides a seamless digital banking experience with real-time transactions, comprehensive account management, and a professional aesthetic.
 
-# Link : https://zero-bank-phi.vercel.app/
-
 ## ✨ Key Features
 
 *   **Secure Authentication:** User registration and login powered by Firebase Authentication. Automatically generates a unique 10-digit account number and requires a secure 4-digit transaction PIN.

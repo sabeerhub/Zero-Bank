@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Search, UserCheck, AlertCircle, QrCode } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, writeBatch, doc, getDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase';
 import TransactionPinModal from '../components/TransactionPinModal';
 import TransactionReceipt from '../components/TransactionReceipt';
@@ -26,17 +26,7 @@ export default function Transfer() {
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
 
-  // Debounce account verification
-  useEffect(() => {
-    if (accountNumber.length === 10) {
-      verifyAccount(accountNumber);
-    } else {
-      setRecipient(null);
-      setError('');
-    }
-  }, [accountNumber]);
-
-  const verifyAccount = async (accNum: string) => {
+  const verifyAccount = React.useCallback(async (accNum: string) => {
     if (accNum === profile?.accountNumber) {
       setError("You cannot transfer to yourself");
       return;
@@ -46,11 +36,12 @@ export default function Transfer() {
     setError('');
     
     try {
-      const q = query(collection(db, 'users'), where('accountNumber', '==', accNum), limit(1));
+      const docRef = doc(db, 'public_profiles', accNum);
+      const docSnap = await getDoc(docRef);
       
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        setRecipient({ id: userDoc.id, ...userDoc.data() });
+      if (docSnap.exists()) {
+        const profileData = docSnap.data();
+        setRecipient({ id: profileData.uid, ...profileData });
       } else {
         setRecipient(null);
         setError("Account not found");
@@ -58,11 +49,21 @@ export default function Transfer() {
     } catch (err) {
       console.error("Verification error:", err);
       setError("Failed to verify account");
-      handleFirestoreError(err, OperationType.GET, 'users');
+      handleFirestoreError(err, OperationType.GET, 'public_profiles');
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [profile?.accountNumber]);
+
+  // Debounce account verification
+  useEffect(() => {
+    if (accountNumber.length === 10) {
+      verifyAccount(accountNumber);
+    } else {
+      setRecipient(null);
+      setError('');
+    }
+  }, [accountNumber, verifyAccount]);
 
   const handleTransferClick = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +102,7 @@ export default function Transfer() {
 
       // 2. Add to receiver
       const receiverRef = doc(db, 'users', recipient.id);
-      batch.update(receiverRef, { balance: (recipient.balance || 0) + transferAmount });
+      batch.update(receiverRef, { balance: increment(transferAmount) });
 
       // 3. Create sender transaction (Debit)
       const senderTxRef = doc(collection(db, 'transactions'));

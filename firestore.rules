@@ -110,10 +110,15 @@ service cloud.firestore {
     // Rules
     // ===============================================================
 
+    match /public_profiles/{accountNumber} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     match /users/{userId} {
       // Allow individual user to read their own profile
-      // Allow searching for a user by account number (for transfers)
-      allow read: if isAuthenticated() && (isOwner(userId) || (request.query.limit == 1 && request.query.filters.accountNumber != null));
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data);
       
       // Updates are allowed for the owner, but we must protect critical fields

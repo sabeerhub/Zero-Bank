@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { motion } from 'motion/react';
 import { ShieldCheck, Mail, Lock, User, AlertCircle, KeyRound } from 'lucide-react';
@@ -32,15 +32,27 @@ export default function Register() {
       // Auto-generate 10-digit account number (starting with 2 for realism)
       const accountNumber = '2' + Math.floor(Math.random() * 1000000000).toString().padStart(9, '0');
       
-      await setDoc(doc(db, 'users', user.uid), {
+      const batch = writeBatch(db);
+      
+      const userRef = doc(db, 'users', user.uid);
+      batch.set(userRef, {
         uid: user.uid,
         name,
         email,
         accountNumber,
-        balance: 0,
+        balance: 0, // Start with zero balance
         pin,
         createdAt: new Date().toISOString()
       });
+      
+      const publicProfileRef = doc(db, 'public_profiles', accountNumber);
+      batch.set(publicProfileRef, {
+        uid: user.uid,
+        name,
+        accountNumber
+      });
+      
+      await batch.commit();
       
       navigate('/');
     } catch (err: any) {
