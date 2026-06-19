@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Send, Grid, User, LogOut, ShieldCheck } from 'lucide-react';
+import { Home, Send, Grid, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import BottomNav from './BottomNav';
 
@@ -8,8 +8,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { logout } = useAuth();
   const location = useLocation();
 
-  // Hide bottom nav on certain pages if needed, but on desktop sidebar is always visible
-  const hideBottomNavPages = ['/transfer', '/services', '/interbank', '/add-funds', '/loan', '/card'];
+  // Bottom nav is shown on the 4 main tab pages; we only hide on tertiary sub-screens
+  const hideBottomNavPages = ['/add-funds', '/interbank', '/notifications', '/upgrade'];
   const shouldHideBottomNav = hideBottomNavPages.some(path => location.pathname.startsWith(path));
 
   const navItems = [
@@ -20,43 +20,43 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-bg flex flex-col md:flex-row font-sans text-neutral-text">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row font-sans text-neutral-text antialiased">
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 fixed h-full z-50 shadow-sm">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-            <ShieldCheck className="w-6 h-6 text-primary" />
+      <aside className="hidden md:flex flex-col w-72 bg-white border-r border-[#E2E8F0] fixed h-full z-50">
+        <div className="px-8 py-8 flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-black text-xl italic tracking-tighter shadow-sm shadow-primary/10">
+            Z
           </div>
-          <h1 className="text-xl font-black text-primary tracking-tight">Zero Bank</h1>
+          <span className="text-xl font-bold text-neutral-text tracking-tight">Zero Bank</span>
         </div>
         
-        <nav className="flex-1 px-4 space-y-2 mt-4">
+        <nav className="flex-1 px-5 space-y-2.5 mt-4">
           {navItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${
+                `flex items-center gap-3.5 px-5 py-4 rounded-2xl transition-all duration-200 ${
                   isActive 
-                    ? 'bg-primary/10 text-primary font-bold' 
-                    : 'text-neutral-muted hover:bg-gray-50 hover:text-neutral-text font-medium'
+                    ? 'bg-primary/5 text-primary font-bold shadow-[0_4px_12px_rgba(37,99,235,0.03)]' 
+                    : 'text-neutral-muted hover:bg-neutral-bg hover:text-neutral-text font-medium'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <item.icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
-                  <span>{item.label}</span>
+                  <item.icon className="w-5 h-5 transition-transform duration-200 group-hover:scale-105" strokeWidth={isActive ? 2.5 : 2} />
+                  <span className="text-[14px] tracking-tight">{item.label}</span>
                 </>
               )}
             </NavLink>
           ))}
         </nav>
         
-        <div className="p-4 border-t border-gray-100">
+        <div className="p-6 border-t border-[#E2E8F0]">
           <button
             onClick={() => logout()}
-            className="flex items-center gap-3 px-4 py-3.5 w-full rounded-xl text-status-error hover:bg-status-error/10 transition-colors font-medium"
+            className="flex items-center gap-3 px-5 py-4 w-full rounded-2xl text-status-error hover:bg-status-error/5 transition-colors font-semibold text-[14px] tracking-tight"
           >
             <LogOut className="w-5 h-5" />
             <span>Log Out</span>
@@ -65,8 +65,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 pb-20 md:pb-0 min-h-screen flex flex-col">
-        <div className="w-full max-w-5xl mx-auto flex-1 relative">
+      <main className="flex-1 md:ml-72 pb-24 md:pb-8 min-h-screen flex flex-col">
+        <div className="w-full max-w-5xl mx-auto flex-1 relative px-4 md:px-8">
           {children}
         </div>
       </main>

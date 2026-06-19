@@ -162,15 +162,21 @@ export default function Loan() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-bg flex flex-col w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
-      <header className="px-6 py-6 bg-white flex items-center gap-4 shadow-sm sticky top-0 z-10">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6 text-neutral-text" />
+    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-sans w-full max-w-md mx-auto px-4">
+      <header className="pt-8 pb-6 bg-[#F8FAFC]/90 backdrop-blur-md sticky top-0 z-20 flex items-center gap-4">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="w-10 h-10 rounded-2xl bg-white border border-[#E2E8F0] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
+        >
+          <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
         </button>
-        <h1 className="text-xl font-bold text-neutral-text">Request Loan</h1>
+        <div>
+          <h1 className="text-sm font-bold text-[#0F172A] tracking-tight">Request Loan</h1>
+          <p className="text-[10px] text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Disbursement & Repayment</p>
+        </div>
       </header>
 
-      <main className="flex-1 p-6">
+      <main className="space-y-6">
         {loanBalance > 0 && (
           <div className="bg-orange-50 border border-orange-100 p-5 rounded-2xl mb-8">
             <div className="flex justify-between items-start mb-4">

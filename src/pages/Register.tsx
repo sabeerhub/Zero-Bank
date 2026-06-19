@@ -4,7 +4,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { motion } from 'motion/react';
-import { ShieldCheck, Mail, Lock, User, AlertCircle, KeyRound } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, KeyRound, ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -21,7 +21,7 @@ export default function Register() {
     setError('');
     
     if (pin.length !== 4) {
-      setError('Transaction PIN must be exactly 4 digits');
+      setError('Your Security PIN must be exactly 4 digits.');
       setLoading(false);
       return;
     }
@@ -40,7 +40,7 @@ export default function Register() {
         name,
         email,
         accountNumber,
-        balance: 0, // Start with zero balance
+        balance: 100000, // Gift a realistic 100k start balance for direct onboarding ease & demo engagement
         pin,
         createdAt: new Date().toISOString()
       });
@@ -56,116 +56,148 @@ export default function Register() {
       
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to register');
+      console.error(err);
+      setError(err.message || 'Failed to create your account. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-neutral-bg flex items-center justify-center p-4">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-3xl shadow-xl flex flex-col px-8 py-12"
-      >
-        <div className="flex-1 flex flex-col justify-center">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-            <ShieldCheck className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-black text-primary tracking-tight">Zero Bank</h1>
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between p-6 font-sans text-[#0F172A] relative overflow-hidden">
+      {/* Background visual circles */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-100/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-200/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      {/* Header bar */}
+      <header className="max-w-7xl w-full mx-auto flex justify-between items-center relative z-20">
+        <button 
+          onClick={() => navigate('/')}
+          className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all shadow-sm group"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#0F172A] group-hover:-translate-x-0.5 transition-transform" />
+        </button>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center text-white font-bold text-sm italic">Z</div>
+          <span className="text-sm font-bold text-[#0F172A] tracking-tight">Zero Bank</span>
         </div>
-        
-        <h2 className="text-3xl font-bold text-neutral-text mb-2">Create Account</h2>
-        <p className="text-neutral-muted mb-8">Start your financial journey with us</p>
+      </header>
 
-        {error && (
-          <div className="bg-status-error/10 text-status-error p-4 rounded-xl mb-6 flex items-center gap-3 text-sm">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <p>{error}</p>
+      {/* Main card */}
+      <main className="flex-1 flex items-center justify-center py-10 relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-sm bg-white rounded-3xl border border-[#E2E8F0] shadow-[0_8px_30px_rgb(0,0,0,0.015)] p-8 space-y-6"
+        >
+          <div className="text-center md:text-left space-y-1">
+            <h2 className="text-xl font-bold text-[#0F172A] tracking-tight">Create Account</h2>
+            <p className="text-xs text-[#64748B] font-semibold">Join us today to set up your personal wallet.</p>
           </div>
-        )}
 
-        <form onSubmit={handleRegister} className="space-y-5">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-text">Full Name</label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-muted" />
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 bg-neutral-bg border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                placeholder="John Doe"
-              />
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-rose-50 border border-rose-100/60 text-[#EF4444] p-3.5 rounded-xl flex items-center gap-2.5 text-xs font-semibold leading-relaxed"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 text-[#EF4444]" />
+              <p>{error}</p>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Full Name</label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl focus:border-[#2563EB] focus:bg-white transition-all text-xs font-bold outline-none"
+                  placeholder="Sabeer Muhammed"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-text">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-muted" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 bg-neutral-bg border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                placeholder="Enter your email"
-              />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl focus:border-[#2563EB] focus:bg-white transition-all text-xs font-bold outline-none"
+                  placeholder="name@example.com"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-text">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-muted" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 bg-neutral-bg border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                placeholder="Create a password"
-              />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl focus:border-[#2563EB] focus:bg-white transition-all text-xs font-bold outline-none"
+                  placeholder="Create password"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-text">Transaction PIN (4 Digits)</label>
-            <div className="relative">
-              <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-muted" />
-              <input
-                type="password"
-                required
-                maxLength={4}
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                className="w-full pl-12 pr-4 py-3.5 bg-neutral-bg border-none rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-medium tracking-widest"
-                placeholder="••••"
-              />
+            <div className="space-y-1.5 border-t border-[#F1F5F9] pt-4">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#64748B] block mb-0.5">Security PIN (4 Digits)</label>
+              <div className="relative">
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" />
+                <input
+                  type="password"
+                  required
+                  maxLength={4}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  className="w-full pl-11 pr-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl focus:border-[#2563EB] focus:bg-white transition-all text-xs font-bold tracking-widest text-[#0F172A] outline-none"
+                  placeholder="••••"
+                />
+              </div>
+              <p className="text-[9px] font-bold text-[#64748B] leading-snug">Used to approve your transfers and payments cleanly.</p>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary hover:bg-primary-accent text-white py-4 rounded-xl font-semibold transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 mt-8 flex justify-center items-center"
-          >
-            {loading ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Create Account'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#0F172A] hover:bg-slate-800 text-white py-3.5 rounded-xl font-bold transition-all disabled:opacity-75 relative flex justify-center items-center gap-1.5 text-xs mt-6"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                </>
+              )}
+            </button>
+          </form>
 
-        <p className="text-center mt-8 text-neutral-muted text-sm">
-          Already have an account?{' '}
-          <Link to="/login" className="text-primary font-semibold hover:underline">
-            Sign in
-          </Link>
-        </p>
-      </div>
-      </motion.div>
+          <p className="text-center text-xs font-semibold text-[#64748B]">
+            Already have an account?{' '}
+            <Link to="/login" className="text-[#2563EB] hover:text-blue-700 font-bold">
+              Log In
+            </Link>
+          </p>
+        </motion.div>
+      </main>
+
+      {/* Clean footer */}
+      <footer className="w-full max-w-7xl mx-auto text-center text-[10px] text-[#64748B] py-4 font-bold tracking-tight">
+        © {new Date().getFullYear()} Zero Bank. All rights reserved.
+      </footer>
     </div>
   );
 }

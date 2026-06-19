@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Smartphone, Wifi, Zap, Tv, CheckCircle2, AlertCircle, ChevronRight, Receipt, GraduationCap, Car, Gift, CreditCard, Landmark, History } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Smartphone, 
+  Wifi, 
+  Lightbulb, 
+  Tv, 
+  CheckCircle2, 
+  AlertCircle, 
+  ChevronRight, 
+  Receipt, 
+  GraduationCap, 
+  Car, 
+  Gift, 
+  CreditCard, 
+  Landmark, 
+  History, 
+  PiggyBank, 
+  Search 
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { collection, writeBatch, doc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -143,6 +161,7 @@ export default function Services() {
   const [error, setError] = useState('');
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (location.state?.service) {
@@ -152,16 +171,14 @@ export default function Services() {
   }, [location.state]);
 
   const services = [
-    { id: 'airtime', icon: Smartphone, label: 'Airtime', color: 'bg-green-100 text-green-600' },
-    { id: 'data', icon: Wifi, label: 'Data', color: 'bg-purple-100 text-purple-600' },
-    { id: 'electricity', icon: Zap, label: 'Electricity', color: 'bg-yellow-100 text-yellow-600' },
-    { id: 'bills', icon: Tv, label: 'TV Bills', color: 'bg-blue-100 text-blue-600' },
-    { id: 'education', icon: GraduationCap, label: 'Education', color: 'bg-indigo-100 text-indigo-600' },
-    { id: 'toll', icon: Car, label: 'Toll & Transport', color: 'bg-orange-100 text-orange-600' },
-    { id: 'giftcards', icon: Gift, label: 'Gift Cards', color: 'bg-pink-100 text-pink-600' },
-    { id: 'card', icon: CreditCard, label: 'My Card', color: 'bg-rose-100 text-rose-600' },
-    { id: 'loan', icon: Landmark, label: 'Loan', color: 'bg-emerald-100 text-emerald-600' },
-    { id: 'history', icon: History, label: 'Transaction History', color: 'bg-slate-100 text-slate-600' },
+    { id: 'airtime', icon: Smartphone, label: 'Airtime', color: 'bg-[#FFF5EB] text-[#FF8A00]', desc: 'Top up airtime for any network' },
+    { id: 'data', icon: Wifi, label: 'Data', color: 'bg-[#EBF5FF] text-[#2563EB]', desc: 'Buy data bundles instantly' },
+    { id: 'electricity', icon: Lightbulb, label: 'Electricity', color: 'bg-[#FFFBEB] text-[#D97706]', desc: 'Pay prepaid & postpaid electricity' },
+    { id: 'bills', icon: Tv, label: 'TV Bills', color: 'bg-[#EDF2FE] text-[#2563EB]', desc: 'Pay DSTV, GOtv, and StarTimes' },
+    { id: 'giftcards', icon: Gift, label: 'Gift Cards', color: 'bg-[#F0FDF4] text-[#16A34A]', desc: 'Purchase international e-cards' },
+    { id: 'loan', icon: PiggyBank, label: 'Loan', color: 'bg-[#F5F3FF] text-[#7C3AED]', desc: 'Instant credit calculation & loans' },
+    { id: 'card', icon: CreditCard, label: 'My Card', color: 'bg-[#EFF6FF] text-[#3B82F6]', desc: 'Manage your virtual billing cards' },
+    { id: 'history', icon: History, label: 'History', color: 'bg-[#F1F5F9] text-[#64748B]', desc: 'View past ledger transaction history' },
   ];
 
   const handleServiceChange = (id: string) => {
@@ -175,6 +192,10 @@ export default function Services() {
     }
     if (id === 'loan') {
       navigate('/loan');
+      return;
+    }
+    if (id === 'giftcards') {
+      navigate('/gift-cards');
       return;
     }
     setActiveService(id as ServiceType);
@@ -360,44 +381,109 @@ export default function Services() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-bg flex flex-col w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto">
-      <header className="px-6 py-6 bg-white flex items-center gap-4 shadow-sm sticky top-0 z-10">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-sans w-full max-w-md mx-auto px-4">
+      <header className="pt-8 pb-6 bg-[#F8FAFC]/90 backdrop-blur-md sticky top-0 z-20 flex items-center gap-4">
         <button 
           onClick={handleBack} 
-          className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors"
+          className="w-10 h-10 rounded-2xl bg-white border border-[#E2E8F0] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
         >
-          <ArrowLeft className="w-6 h-6 text-neutral-text" />
+          <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-neutral-text">
+          <h1 className="text-sm font-bold text-[#0F172A] tracking-tight">
             {step === 0 ? 'Services' : step === 2 ? 'Review Transaction' : services.find(s => s.id === activeService)?.label}
           </h1>
-          {step === 0 && <p className="text-xs text-neutral-muted mt-0.5 font-medium">Select a service to continue</p>}
+          {step === 0 ? (
+            <p className="text-[10px] text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Popular utility payments & bills</p>
+          ) : (
+            <p className="text-[10px] text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Fill in payment instructions</p>
+          )}
         </div>
       </header>
 
-      <main className="flex-1 p-6">
+      <main className="flex-1 pb-12">
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div
               key="grid"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6"
             >
-              {services.map((service) => (
-                <button
-                  key={service.id}
-                  onClick={() => handleServiceChange(service.id as ServiceType)}
-                  className="group bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center gap-4 hover:shadow-md hover:border-primary/20 hover:-translate-y-1 transition-all duration-300 active:scale-95"
-                >
-                  <div className={`w-14 h-14 rounded-2xl ${service.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                    <service.icon className="w-7 h-7" strokeWidth={2} />
+              {/* Search services input */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#94A3B8]" />
+                <input
+                  type="text"
+                  placeholder="Search services"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-bold font-sans text-[#0F172A] placeholder-[#94A3B8] shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                />
+              </div>
+
+              {/* Popular bento grid */}
+              {searchTerm === '' && (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center pl-1">
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-neutral-muted">Popular</h3>
                   </div>
-                  <span className="font-semibold text-sm text-neutral-text group-hover:text-primary transition-colors">{service.label}</span>
-                </button>
-              ))}
+                  <div className="grid grid-cols-4 gap-2.5 px-0.5">
+                    {services.map((service) => (
+                      <button
+                        key={`pop-${service.id}`}
+                        onClick={() => handleServiceChange(service.id)}
+                        className="bg-white border border-[#E2E8F0] p-2.5 rounded-[22px] flex flex-col items-center gap-2 hover:border-[#CBD5E1] active:scale-[0.95] transition-all text-center group"
+                      >
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 ${service.color}`}>
+                          <service.icon className="w-4 h-4 shadow-inner" strokeWidth={2.5} />
+                        </div>
+                        <span className="text-[10px] font-bold text-[#0F172A] tracking-tight leading-none truncate w-full">{service.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* All Services list section */}
+              <div className="space-y-3 pt-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-neutral-muted">
+                  {searchTerm === '' ? 'All Services' : 'Search Results'}
+                </h3>
+                <div className="bg-white rounded-[26px] p-2 border border-[#E2E8F0] overflow-hidden space-y-1 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+                  {services.filter(s => 
+                    s.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    s.desc.toLowerCase().includes(searchTerm.toLowerCase())
+                  ).length === 0 ? (
+                    <p className="text-xs font-bold text-center py-8 text-neutral-muted">No services found matching "{searchTerm}"</p>
+                  ) : (
+                    services
+                      .filter(s => 
+                        s.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        s.desc.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                      .map((service) => (
+                        <div
+                          key={`all-${service.id}`}
+                          onClick={() => handleServiceChange(service.id)}
+                          className="p-3.5 flex items-center justify-between hover:bg-[#F8FAFC] rounded-[20px] transition-all duration-200 cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${service.color}`}>
+                              <service.icon className="w-5 h-5" strokeWidth={2.5} />
+                            </div>
+                            <div className="overflow-hidden">
+                              <p className="text-xs font-extrabold text-[#0F172A] mb-0.5 group-hover:text-primary transition-colors">{service.label}</p>
+                              <p className="text-[10px] font-semibold text-neutral-muted truncate leading-relaxed">{service.desc}</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-neutral-muted group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      ))
+                  )}
+                </div>
+              </div>
             </motion.div>
           )}
 
