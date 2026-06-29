@@ -1,5 +1,6 @@
 {
   "name": "Zero Bank",
   "description": "A premium mobile-first banking application.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

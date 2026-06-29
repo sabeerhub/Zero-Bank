@@ -6,6 +6,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 import Dashboard from './pages/Dashboard';
@@ -52,31 +53,33 @@ const RootRoute = () => {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <Router>
-          <div className="min-h-screen bg-neutral-bg font-sans text-neutral-text">
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              <Route path="/" element={<RootRoute />} />
-              <Route path="/transfer" element={<ProtectedRoute><Transfer /></ProtectedRoute>} />
-              <Route path="/interbank" element={<ProtectedRoute><Interbank /></ProtectedRoute>} />
-              <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
-              <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-              <Route path="/card" element={<ProtectedRoute><Card /></ProtectedRoute>} />
-              <Route path="/loan" element={<ProtectedRoute><Loan /></ProtectedRoute>} />
-              <Route path="/add-funds" element={<ProtectedRoute><AddFunds /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/upgrade" element={<ProtectedRoute><UpgradeAccount /></ProtectedRoute>} />
-              <Route path="/gift-cards" element={<ProtectedRoute><GiftCards /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            </Routes>
-          </div>
-        </Router>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <div className="min-h-screen bg-neutral-bg font-sans text-neutral-text dark:bg-slate-950 dark:text-slate-100 transition-colors duration-250">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                <Route path="/" element={<RootRoute />} />
+                <Route path="/transfer" element={<ProtectedRoute><Transfer /></ProtectedRoute>} />
+                <Route path="/interbank" element={<ProtectedRoute><Interbank /></ProtectedRoute>} />
+                <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+                <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+                <Route path="/card" element={<ProtectedRoute><Card /></ProtectedRoute>} />
+                <Route path="/loan" element={<ProtectedRoute><Loan /></ProtectedRoute>} />
+                <Route path="/add-funds" element={<ProtectedRoute><AddFunds /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/upgrade" element={<ProtectedRoute><UpgradeAccount /></ProtectedRoute>} />
+                <Route path="/gift-cards" element={<ProtectedRoute><GiftCards /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              </Routes>
+            </div>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

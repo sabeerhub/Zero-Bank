@@ -13,7 +13,12 @@ import {
   CheckCircle2, 
   X,
   Lock,
-  Compass
+  Compass,
+  Coins,
+  Shield,
+  Clock,
+  ExternalLink,
+  ChevronUp
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
@@ -28,9 +33,17 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [nameInput, setNameInput] = useState(profile?.name || 'Sabeer');
   const [isSaving, setIsSaving] = useState(false);
-  const [copiedNotification, setCopiedNotification] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulated mount loader
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (profile?.name) {
@@ -55,12 +68,10 @@ export default function Profile() {
         name: nameInput.trim()
       });
       setIsEditing(false);
-      setToastMessage('Name updated successfully!');
-      setTimeout(() => setToastMessage(''), 3000);
+      showNotification('Profile name updated successfully!');
     } catch (error) {
       console.error("Update profile name error:", error);
-      setToastMessage('Error updating name.');
-      setTimeout(() => setToastMessage(''), 3000);
+      showNotification('Error updating name.');
     } finally {
       setIsSaving(false);
     }
@@ -72,15 +83,15 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-sans w-full max-w-md mx-auto">
+    <div className="space-y-6">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3.5 bg-[#0F172A] text-white text-xs font-bold rounded-2xl shadow-xl flex items-center gap-2"
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className="fixed top-6 left-1/2 z-50 px-5 py-3.5 bg-slate-900 dark:bg-slate-850 text-white text-xs font-bold rounded-2xl shadow-xl flex items-center gap-2 border border-slate-800/40"
           >
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{toastMessage}</span>
@@ -88,167 +99,188 @@ export default function Profile() {
         )}
       </AnimatePresence>
 
-      {/* Top Banner Block - exactly like design */}
-      <div className="bg-[#2563EB] text-white pt-8 pb-10 px-6 rounded-b-[40px] shadow-[0_12px_40px_rgba(37,99,235,0.12)] relative">
-        <header className="flex justify-between items-center mb-6">
+      {/* Header */}
+      <header className="pb-4 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => navigate('/')} 
-            className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all flex items-center justify-center border border-white/5 text-white"
+            className="w-10 h-10 rounded-xl bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs group"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 text-slate-900 dark:text-slate-100 group-hover:-translate-x-0.5 transition-transform" />
           </button>
-          
-          <span className="text-sm font-bold tracking-tight text-white/90">Profile</span>
-          <div className="w-10" /> {/* Spacer */}
-        </header>
-
-        {/* User Identity Section */}
-        <div className="flex flex-col items-center text-center mt-2">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-white p-1 shadow-lg flex items-center justify-center">
-              <div className="w-full h-full rounded-full bg-gradient-to-tr from-[#1D4ED8] to-[#3B82F6] flex items-center justify-center text-white text-3xl font-black tracking-tighter">
-                {(profile?.name || 'Sabeer').charAt(0).toUpperCase()}
-              </div>
-            </div>
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="absolute bottom-1 right-1 bg-white p-1.5 rounded-full text-[#2563EB] shadow-md hover:scale-110 active:scale-90 transition-all border border-slate-100"
-            >
-              <User className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="mt-4 space-y-1">
-            <h2 className="text-xl font-bold tracking-tight text-white leading-tight">
-              {profile?.name || 'Sabeer'}
-            </h2>
-            <p className="text-xs text-white/70 font-medium">
-              {profile?.email || 'sabeer@example.com'}
-            </p>
-            
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 border border-white/10 text-white font-bold text-[10px] rounded-full uppercase tracking-wider mt-2">
-              <span>Silver Member</span>
-            </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Profile Settings</h1>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold tracking-wider uppercase mt-0.5">Manage personal metadata & settings</p>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Options List - exactly like design */}
-      <main className="px-6 mt-6">
-        <div className="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm divide-y divide-[#F1F5F9] overflow-hidden">
-          
-          {/* Edit Name / Personal Info */}
-          <button 
-            onClick={() => setIsEditing(true)}
-            className="w-full p-4.5 flex items-center justify-between hover:bg-[#F8FAFC] transition-all text-left group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
-                <User className="w-5 h-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[#0F172A] group-hover:text-primary transition-colors">Personal Information</p>
-                <p className="text-[10px] leading-relaxed text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Click to change name</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#94A3B8] group-hover:translate-x-0.5 transition-transform" />
-          </button>
-
-          {/* KYC Verification - Green Verified badge as per design */}
-          <div className="p-4.5 flex items-center justify-between hover:bg-[#F8FAFC] transition-all group">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[#0F172A]">KYC Verification</p>
-                <p className="text-[10px] leading-relaxed text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Identity status check</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-[#16A34A] flex items-center gap-1">
-                Verified <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-              </span>
-              <ChevronRight className="w-4 h-4 text-[#94A3B8]" />
-            </div>
+      {/* Responsive layout containers */}
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <div key="skele" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-5 bg-white dark:bg-[#0B121F]/80 rounded-[28px] p-6 border border-slate-200 dark:border-slate-800 h-96 animate-pulse"></div>
+            <div className="lg:col-span-7 bg-white dark:bg-[#0B121F]/80 rounded-[28px] p-6 border border-slate-200 dark:border-slate-800 h-80 animate-pulse"></div>
           </div>
-
-          {/* Bank Settings (Transaction Pin Setup) */}
-          <button 
-            onClick={() => setIsPinModalOpen(true)}
-            className="w-full p-4.5 flex items-center justify-between hover:bg-[#F8FAFC] transition-all text-left group"
+        ) : (
+          <motion.div 
+            key="profile-grid"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-1 lg:grid-cols-12 gap-6"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#FFFBEB] text-[#D97706] flex items-center justify-center shrink-0">
-                <Landmark className="w-5 h-5" strokeWidth={2} />
+            {/* Left Column (Identity Banner & KYC Tier Meter) */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Identity Banner Card */}
+              <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white rounded-[32px] p-6 pt-8 shadow-xl relative overflow-hidden text-center flex flex-col items-center">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+                
+                {/* Large Avatar */}
+                <div className="relative mb-5">
+                  <div className="w-24 h-24 rounded-full bg-white dark:bg-slate-900 p-1.5 shadow-lg flex items-center justify-center">
+                    <div className="w-full h-full rounded-full bg-gradient-to-tr from-blue-700 to-indigo-700 flex items-center justify-center text-white text-3xl font-black">
+                      {(profile?.name || 'Sabeer').charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="absolute bottom-1 right-1 bg-white dark:bg-slate-850 p-2 rounded-full text-blue-600 dark:text-blue-400 shadow-md hover:scale-110 active:scale-90 transition-all border border-slate-150 dark:border-slate-800 cursor-pointer"
+                    title="Edit Name"
+                  >
+                    <User className="w-3.5 h-3.5" strokeWidth={3} />
+                  </button>
+                </div>
+
+                <h2 className="text-xl font-bold tracking-tight leading-tight">{profile?.name || 'Sabeer'}</h2>
+                <p className="text-xs text-white/70 font-semibold mt-1">{profile?.email || 'sabeer@example.com'}</p>
+                
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 border border-white/10 text-white font-black text-[10px] rounded-full uppercase tracking-wider mt-4">
+                  <span>Silver Member</span>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-bold text-[#0F172A] group-hover:text-primary transition-colors">Bank Settings</p>
-                <p className="text-[10px] leading-relaxed text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Change card pin & limits</p>
+
+              {/* KYC Tier verification tracker */}
+              <div className="bg-white dark:bg-[#0B121F]/80 rounded-[28px] p-6 border border-slate-200 dark:border-slate-800 shadow-[0_8px_30px_rgba(0,0,0,0.01)] space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-slate-800 pb-3">
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">KYC Verification Tier</h4>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 font-black px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    Verified
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-slate-900 dark:text-white">
+                    <span>Tier 2 (Standard account)</span>
+                    <span className="text-slate-400 dark:text-slate-500">66% Completed</span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full w-2/3" />
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed font-semibold">
+                  Upgrade to Tier 3 by submitting residential verification utility bills to expand your single transactions limits beyond ₦5,000,000.
+                </p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#94A3B8] group-hover:translate-x-0.5 transition-transform" />
-          </button>
 
-          {/* Notification Settings */}
-          <button 
-            onClick={() => showNotification('Notifications updated successfully')}
-            className="w-full p-4.5 flex items-center justify-between hover:bg-[#F8FAFC] transition-all text-left group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#EDF2FE] text-[#2563EB] flex items-center justify-center shrink-0">
-                <Bell className="w-5 h-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[#0F172A] group-hover:text-primary transition-colors">Notification Settings</p>
-                <p className="text-[10px] leading-relaxed text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Preferences & alerts</p>
+            {/* Right Column (Settings Navigation links) */}
+            <div className="lg:col-span-7">
+              <div className="bg-white dark:bg-[#0B121F]/80 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-[0_8px_30px_rgba(0,0,0,0.01)] overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {/* Personal Info */}
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="w-full p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Personal Information</p>
+                      <p className="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500 font-bold tracking-wide uppercase mt-0.5">Click to update display name</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Bank Settings & Passcode */}
+                <button 
+                  onClick={() => setIsPinModalOpen(true)}
+                  className="w-full p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <Landmark className="w-5 h-5" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Bank Security Settings</p>
+                      <p className="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500 font-bold tracking-wide uppercase mt-0.5">Change card pin & limits</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Notifications setup link */}
+                <button 
+                  onClick={() => navigate('/notifications')}
+                  className="w-full p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Bell className="w-5 h-5" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Real-time Alert Notifications</p>
+                      <p className="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500 font-bold tracking-wide uppercase mt-0.5">Manage app push alerts</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Help support */}
+                <button 
+                  onClick={() => navigate('/support')}
+                  className="w-full p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-all text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full bg-slate-50 dark:bg-slate-800/20 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
+                      <HelpCircle className="w-5 h-5" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Help & Live Support</p>
+                      <p className="text-[10px] leading-relaxed text-slate-400 dark:text-slate-500 font-bold tracking-wide uppercase mt-0.5">Reach live customer desk</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Safe logout button */}
+                <button 
+                  onClick={handleLogout}
+                  className="w-full p-5 flex items-center justify-between hover:bg-rose-50/50 dark:hover:bg-rose-950/10 transition-all text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                      <LogOut className="w-5 h-5" strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-rose-600">Secure Sign Out</p>
+                      <p className="text-[10px] leading-relaxed text-rose-400 font-bold tracking-wide uppercase mt-0.5">Leave browser session safely</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-rose-600" />
+                </button>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#94A3B8] group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Help Center */}
-          <button 
-            onClick={() => navigate('/support')}
-            className="w-full p-4.5 flex items-center justify-between hover:bg-[#F8FAFC] transition-all text-left group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-slate-50 text-[#64748B] flex items-center justify-center shrink-0">
-                <HelpCircle className="w-5 h-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[#0F172A] group-hover:text-primary transition-colors">Help Center</p>
-                <p className="text-[10px] leading-relaxed text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Get support 24/7</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#94A3B8] group-hover:translate-x-0.5 transition-transform" />
-          </button>
-
-          {/* Logout */}
-          <button 
-            onClick={handleLogout}
-            className="w-full p-4.5 flex items-center justify-between hover:bg-[#FEF2F2] transition-all text-left group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#FEF2F2] text-[#EF4444] flex items-center justify-center shrink-0">
-                <LogOut className="w-5 h-5" strokeWidth={2} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-[#EF4444]">Logout</p>
-                <p className="text-[10px] leading-relaxed text-rose-400 font-bold tracking-wide uppercase mt-0.5">Leave account safely</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-[#EF4444]" />
-          </button>
-        </div>
-
-        {/* Footer info branding block */}
-        <div className="pt-8 text-center">
-          <p className="text-[10px] text-neutral-muted font-bold tracking-widest uppercase">Zero Bank • All Rights Reserved</p>
-        </div>
-      </main>
-
-      {/* Profile Edit Name Modal */}
+      {/* Edit Display Name Modal */}
       <AnimatePresence>
         {isEditing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -256,32 +288,32 @@ export default function Profile() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#0F172A]/45 backdrop-blur-sm"
               onClick={() => setIsEditing(false)}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl w-full max-w-sm p-6 relative z-10 border border-[#E2E8F0] shadow-xl space-y-4"
+              className="bg-white dark:bg-[#0E1626] rounded-3xl w-full max-w-sm p-6 relative z-10 border border-[#E2E8F0] dark:border-slate-800 shadow-2xl space-y-4"
             >
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold text-[#0F172A] tracking-tight">Edit Name</h3>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Edit Display Name</h3>
                 <button 
                   onClick={() => setIsEditing(false)}
-                  className="w-7 h-7 rounded-lg bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-[#64748B]"
+                  className="w-8 h-8 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4.5 h-4.5" />
                 </button>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-muted">Full Name</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Display Name</label>
                 <input 
                   type="text"
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-bold outline-none focus:bg-white focus:border-[#2563EB] transition-all"
+                  className="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl text-xs font-bold outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 transition-all text-slate-900 dark:text-white placeholder-slate-400"
                   placeholder="Enter full name"
                 />
               </div>
@@ -289,9 +321,9 @@ export default function Profile() {
               <button 
                 onClick={updateProfileName}
                 disabled={isSaving || !nameInput.trim()}
-                className="w-full py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all disabled:opacity-50"
+                className="w-full py-3.5 bg-slate-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all disabled:opacity-50 cursor-pointer"
               >
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? 'Saving Changes...' : 'Save Changes'}
               </button>
             </motion.div>
           </div>
@@ -303,7 +335,7 @@ export default function Profile() {
         onClose={() => setIsPinModalOpen(false)} 
         onSuccess={() => {
           setIsPinModalOpen(false);
-          showNotification('Transaction PIN updated successfully!');
+          showNotification('Transaction Passcode changed successfully!');
         }}
         mode="change"
       />

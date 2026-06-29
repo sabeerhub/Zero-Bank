@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Landmark, Calendar, CheckCircle2, X } from 'lucide-react';
+import { ArrowLeft, Landmark, Calendar, CheckCircle2, X, AlertCircle, Coins, ShieldCheck, Scale, Percent } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db, auth } from '../firebase';
-import { doc, writeBatch, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, writeBatch, collection, increment } from 'firebase/firestore';
 
 export default function Loan() {
   const navigate = useNavigate();
@@ -13,10 +13,19 @@ export default function Loan() {
   const [duration, setDuration] = useState('1');
   const [isApplying, setIsApplying] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [showRepayModal, setShowRepayModal] = useState(false);
   const [repayAmount, setRepayAmount] = useState('');
   const [isRepaying, setIsRepaying] = useState(false);
+
+  // Simulated skeletal mount loader
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, []);
 
   const loanBalance = profile?.loanBalance || 0;
   const maxLoan = profile ? profile.balance * 2 + 50000 : 50000;
@@ -66,7 +75,6 @@ export default function Loan() {
       });
       
       await batch.commit();
-      
       setSuccess(true);
     } catch (error) {
       console.error('Error applying for loan:', error);
@@ -84,7 +92,7 @@ export default function Loan() {
     if (isNaN(amountToRepay) || amountToRepay <= 0) return;
     
     if (amountToRepay > profile.balance) {
-      alert('Insufficient funds');
+      alert('Insufficient funds in your account');
       return;
     }
     if (amountToRepay > loanBalance) {
@@ -139,21 +147,21 @@ export default function Loan() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-neutral-bg flex flex-col items-center justify-center p-6 text-center">
+      <div className="flex flex-col items-center justify-center py-12 text-center">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="w-24 h-24 bg-status-success/10 rounded-full flex items-center justify-center mb-6"
+          className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-6 shadow-inner"
         >
-          <CheckCircle2 className="w-12 h-12 text-status-success" />
+          <CheckCircle2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
         </motion.div>
-        <h2 className="text-2xl font-bold text-neutral-text mb-2">Application Received!</h2>
-        <p className="text-neutral-muted mb-8">
-          Your loan of ₦{parseFloat(amount).toLocaleString()} has been approved and disbursed to your account.
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Loan Disbursement Completed!</h2>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-8 max-w-sm leading-relaxed font-semibold">
+          Your loan of <strong>₦{parseFloat(amount).toLocaleString()}</strong> has been approved and instantly loaded to your active wallet balance.
         </p>
         <button
           onClick={() => navigate('/')}
-          className="w-full max-w-sm bg-primary hover:bg-primary-accent text-white py-4 rounded-xl font-semibold transition-all active:scale-[0.98]"
+          className="w-full max-w-xs bg-slate-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white py-3.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer"
         >
           Back to Dashboard
         </button>
@@ -162,172 +170,224 @@ export default function Loan() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-sans w-full max-w-md mx-auto px-4">
-      <header className="pt-8 pb-6 bg-[#F8FAFC]/90 backdrop-blur-md sticky top-0 z-20 flex items-center gap-4">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="w-10 h-10 rounded-2xl bg-white border border-[#E2E8F0] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
-        </button>
-        <div>
-          <h1 className="text-sm font-bold text-[#0F172A] tracking-tight">Request Loan</h1>
-          <p className="text-[10px] text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Disbursement & Repayment</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="pb-4 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/')} 
+            className="w-10 h-10 rounded-xl bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs group"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-900 dark:text-slate-100 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div>
+            <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Credit & Loans</h1>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold tracking-wider uppercase mt-0.5">Flexible disbursement & repayments</p>
+          </div>
         </div>
-      </header>
 
-      <main className="space-y-6">
-        {loanBalance > 0 && (
-          <div className="bg-orange-50 border border-orange-100 p-5 rounded-2xl mb-8">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-sm font-bold text-orange-900">Outstanding Loan</p>
-                <p className="text-2xl font-black text-orange-700 mt-1">₦{loanBalance.toLocaleString()}</p>
-              </div>
-              <button
-                onClick={() => setShowRepayModal(true)}
-                className="px-4 py-2 bg-orange-600 text-white text-sm font-bold rounded-xl hover:bg-orange-700 transition-colors"
-              >
-                Repay
-              </button>
+        {profile && (
+          <div className="hidden sm:flex items-center gap-3 bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 p-2.5 px-4 rounded-2xl shadow-xs">
+            <Coins className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
+            <div>
+              <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-wider uppercase">Zero Wallet</p>
+              <p className="text-sm font-extrabold text-slate-900 dark:text-white">₦••••••</p>
             </div>
-            <p className="text-xs text-orange-600">
-              Available Balance: ₦{profile?.balance?.toLocaleString() || 0}
-            </p>
           </div>
         )}
+      </header>
 
-        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-start gap-3 mb-8">
-          <Landmark className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-emerald-900">Eligible Amount</p>
-            <p className="text-xl font-black text-emerald-700 mt-1">₦{maxLoan.toLocaleString()}</p>
-            <p className="text-xs text-emerald-600 mt-1">Based on your account history</p>
+      {/* Main content grid */}
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <div key="skel" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-4 bg-white dark:bg-[#0B121F]/80 rounded-[28px] p-6 border border-slate-200 dark:border-slate-800 h-80 animate-pulse"></div>
+            <div className="lg:col-span-8 bg-white dark:bg-[#0B121F]/80 rounded-[28px] p-6 border border-slate-200 dark:border-slate-800 h-96 animate-pulse"></div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column (Balances & Eligibility parameters) */}
+            <div className="lg:col-span-4 space-y-6">
+              <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider pl-1">Your Credit Score Overview</span>
 
-        <form onSubmit={handleApply} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-text">How much do you need?</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-neutral-muted">₦</span>
-              <input
-                type="number"
-                required
-                min="1000"
-                max={maxLoan}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-10 pr-4 py-4 bg-white border-none rounded-xl shadow-sm focus:ring-2 focus:ring-primary/20 transition-all font-bold text-xl"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
+              {/* Outstanding Loan balances */}
+              {loanBalance > 0 ? (
+                <div className="bg-orange-50 dark:bg-orange-950/10 border border-orange-100 dark:border-orange-900/40 p-6 rounded-[28px] space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-orange-900 dark:text-orange-400 tracking-wider">Outstanding Loan Balance</span>
+                    <h3 className="text-2xl font-black text-orange-700 dark:text-orange-400 mt-1">₦{loanBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowRepayModal(true)}
+                    className="w-full py-3 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white text-xs font-bold rounded-2xl transition-colors shadow-sm cursor-pointer"
+                  >
+                    Repay Loan Instantly
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 p-6 rounded-[28px] shadow-[0_8px_30px_rgba(0,0,0,0.01)] flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5.5 h-5.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Good standing</h4>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold tracking-wide mt-0.5">No outstanding credit debt</p>
+                  </div>
+                </div>
+              )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-text">Duration (Months)</label>
-            <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-muted" />
-              <select
-                required
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-xl shadow-sm focus:ring-2 focus:ring-primary/20 transition-all text-sm appearance-none font-medium"
-              >
-                <option value="1">1 Month</option>
-                <option value="3">3 Months</option>
-                <option value="6">6 Months</option>
-                <option value="12">12 Months</option>
-              </select>
-            </div>
-          </div>
-
-          {amount && parseFloat(amount) > 0 && (
-            <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-muted">Principal</span>
-                <span className="font-medium">₦{parseFloat(amount).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-muted">Interest ({interestRate * 100}%/mo)</span>
-                <span className="font-medium text-status-error">+ ₦{(parseFloat(amount) * interestRate * parseInt(duration)).toLocaleString()}</span>
-              </div>
-              <div className="pt-3 border-t border-gray-100 flex justify-between">
-                <span className="font-bold text-neutral-text">Total Repayment</span>
-                <span className="font-bold text-primary">
-                  ₦{(parseFloat(amount) + (parseFloat(amount) * interestRate * parseInt(duration))).toLocaleString()}
-                </span>
+              {/* Maximum borrowing limits */}
+              <div className="bg-[#0F172A] dark:bg-[#0B121F]/80 text-white p-6 rounded-[32px] relative overflow-hidden space-y-3 border border-transparent dark:border-slate-800">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+                <div>
+                  <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest block">Maximum borrowing limit</span>
+                  <strong className="text-2xl font-black tracking-tight block mt-1 text-white">₦{maxLoan.toLocaleString()}</strong>
+                </div>
+                <div className="pt-2 flex items-center gap-2 border-t border-white/10 text-[10px] text-white/70 font-semibold">
+                  <Scale className="w-3.5 h-3.5 opacity-80" />
+                  <span>Calculated based on average monthly wallet savings</span>
+                </div>
               </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={isApplying || !amount || parseFloat(amount) > maxLoan}
-            className="w-full bg-primary hover:bg-primary-accent text-white py-4 rounded-xl font-semibold transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 mt-8 flex justify-center items-center shadow-lg shadow-primary/20"
-          >
-            {isApplying ? <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Apply Now'}
-          </button>
-        </form>
-      </main>
+            {/* Right Column (Loan Calculator & Form submission) */}
+            <div className="lg:col-span-8">
+              <div className="bg-white dark:bg-[#0B121F]/80 rounded-[32px] border border-slate-200 dark:border-slate-800 p-6 md:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.015)]">
+                <div className="border-b border-slate-200/60 dark:border-slate-800 pb-4 mb-6 flex justify-between items-center">
+                  <span className="text-xs font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">Configure Loan Application</span>
+                </div>
 
+                <form onSubmit={handleApply} className="space-y-6">
+                  {/* Amount input */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-1">Principal Amount Required</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">₦</span>
+                      <input
+                        type="number"
+                        required
+                        min="1000"
+                        max={maxLoan}
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-none rounded-2xl text-base font-extrabold outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/10 text-slate-900 dark:text-white placeholder-slate-400"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Duration picker */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-1">Repayment Term</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                      <select
+                        required
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800/40 border-none rounded-2xl text-xs font-bold outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/10 text-slate-900 dark:text-white appearance-none cursor-pointer"
+                      >
+                        <option value="1">1 Month Term</option>
+                        <option value="3">3 Months Term</option>
+                        <option value="6">6 Months Term</option>
+                        <option value="12">12 Months Term</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Interest visual panel */}
+                  {amount && parseFloat(amount) > 0 && (
+                    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3.5 text-xs font-semibold">
+                      <div className="flex justify-between items-center text-slate-900 dark:text-slate-100">
+                        <span className="text-slate-400 dark:text-slate-500">Principal Amount</span>
+                        <span className="font-bold">₦{parseFloat(amount).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-900 dark:text-slate-100">
+                        <span className="text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                          <Percent className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                          <span>Interest charges ({interestRate * 100}% per month)</span>
+                        </span>
+                        <span className="text-rose-600 dark:text-rose-400 font-bold">+ ₦{(parseFloat(amount) * interestRate * parseInt(duration)).toLocaleString()}</span>
+                      </div>
+                      <div className="pt-3.5 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center text-sm">
+                        <span className="font-extrabold text-slate-900 dark:text-white">Total Repayment Commitment</span>
+                        <span className="font-black text-blue-600 dark:text-blue-400">
+                          ₦{(parseFloat(amount) + (parseFloat(amount) * interestRate * parseInt(duration))).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isApplying || !amount || parseFloat(amount) > maxLoan}
+                    className="w-full bg-slate-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white py-3.5 rounded-2xl font-bold text-xs transition-all flex justify-center items-center shadow-md active:scale-95 disabled:opacity-40 cursor-pointer"
+                  >
+                    {isApplying ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Authorize Loan Disbursement'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Repay Modal Overlay */}
       <AnimatePresence>
         {showRepayModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-xl"
+              className="bg-white dark:bg-[#0E1626] rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800 p-6 space-y-6"
             >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-neutral-text">Repay Loan</h2>
-                  <button 
-                    onClick={() => setShowRepayModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <X className="w-5 h-5 text-neutral-muted" />
-                  </button>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Repay Credit Loan</h2>
+                <button 
+                  onClick={() => setShowRepayModal(false)}
+                  className="w-8 h-8 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleRepay} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-1">Amount to Repay</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₦</span>
+                    <input
+                      type="number"
+                      required
+                      min="100"
+                      max={Math.min(loanBalance, profile?.balance || 0)}
+                      value={repayAmount}
+                      onChange={(e) => setRepayAmount(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/40 border-none rounded-xl text-xs font-bold outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/10 text-slate-900 dark:text-white placeholder-slate-400"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2 text-[10px] text-slate-400 dark:text-slate-500 font-bold tracking-wide uppercase">
+                    <span>Max: ₦{Math.min(loanBalance, profile?.balance || 0).toLocaleString()}</span>
+                    <button 
+                      type="button"
+                      onClick={() => setRepayAmount(Math.min(loanBalance, profile?.balance || 0).toString())}
+                      className="text-blue-600 dark:text-blue-400 cursor-pointer"
+                    >
+                      Pay Maximum
+                    </button>
+                  </div>
                 </div>
 
-                <form onSubmit={handleRepay} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-neutral-text mb-1.5">Amount to Repay</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-neutral-muted">₦</span>
-                      <input
-                        type="number"
-                        required
-                        min="100"
-                        max={Math.min(loanBalance, profile?.balance || 0)}
-                        value={repayAmount}
-                        onChange={(e) => setRepayAmount(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-neutral-bg border-none rounded-xl text-lg font-bold focus:ring-2 focus:ring-primary/20 transition-all"
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <div className="flex justify-between mt-2 text-xs text-neutral-muted">
-                      <span>Max: ₦{Math.min(loanBalance, profile?.balance || 0).toLocaleString()}</span>
-                      <button 
-                        type="button"
-                        onClick={() => setRepayAmount(Math.min(loanBalance, profile?.balance || 0).toString())}
-                        className="text-primary font-semibold"
-                      >
-                        Pay Max
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isRepaying || !repayAmount || parseFloat(repayAmount) <= 0 || parseFloat(repayAmount) > (profile?.balance || 0) || parseFloat(repayAmount) > loanBalance}
-                    className="w-full mt-6 py-3.5 bg-primary hover:bg-primary-accent text-white font-bold rounded-xl transition-colors disabled:opacity-50 shadow-md shadow-primary/20 flex justify-center items-center"
-                  >
-                    {isRepaying ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Confirm Repayment'}
-                  </button>
-                </form>
-              </div>
+                <button
+                  type="submit"
+                  disabled={isRepaying || !repayAmount || parseFloat(repayAmount) <= 0 || parseFloat(repayAmount) > (profile?.balance || 0) || parseFloat(repayAmount) > loanBalance}
+                  className="w-full py-3.5 bg-slate-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white font-bold rounded-2xl text-xs transition-colors shadow-md disabled:opacity-40 cursor-pointer"
+                >
+                  {isRepaying ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Confirm Repayment'}
+                </button>
+              </form>
             </motion.div>
           </div>
         )}

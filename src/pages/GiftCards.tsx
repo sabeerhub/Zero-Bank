@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Search, Gamepad, Film, ShoppingBag, Utensils, 
-  ChevronRight, ArrowUpRight, AlertCircle, Sparkles, LogIn, Mail 
+  ChevronRight, ArrowUpRight, AlertCircle, Sparkles, LogIn, Mail, Coins, CheckCircle2, ShieldAlert, Gift
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
@@ -52,6 +52,15 @@ export default function GiftCards() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [receiptData, setReceiptData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulated mount loader
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCardClick = (brand: any) => {
     setError('');
@@ -167,193 +176,205 @@ export default function GiftCards() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-sans w-full max-w-md mx-auto px-4">
+    <div className="space-y-6">
       {/* Header */}
-      <header className="pt-8 pb-6 bg-[#F8FAFC]/90 backdrop-blur-md sticky top-0 z-20 flex items-center gap-4">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="w-10 h-10 rounded-2xl bg-white border border-[#E2E8F0] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
-        </button>
-        <div>
-          <h1 className="text-sm font-bold text-[#0F172A] tracking-tight">Gift Cards</h1>
-          <p className="text-[10px] text-neutral-muted font-bold tracking-wide uppercase mt-0.5">International e-Vouchers</p>
+      <header className="pb-4 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/')} 
+            className="w-10 h-10 rounded-xl bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-xs group"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-900 dark:text-slate-100 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div>
+            <h1 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">Gift Cards Store</h1>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold tracking-wider uppercase mt-0.5">International e-vouchers & giftcards</p>
+          </div>
         </div>
+
+        {profile && (
+          <div className="hidden sm:flex items-center gap-3 bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 p-2.5 px-4 rounded-2xl shadow-xs">
+            <Coins className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
+            <div>
+              <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-wider uppercase">Zero Wallet</p>
+              <p className="text-sm font-extrabold text-slate-900 dark:text-white">₦••••••</p>
+            </div>
+          </div>
+        )}
       </header>
 
-      <main className="space-y-8">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-muted" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-white border border-[#E2E8F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/40 outline-none transition-all text-sm font-medium"
-            placeholder="Search gift cards..."
-          />
-        </div>
-
-        {/* Popular Section */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-muted">Popular Brands</h3>
+      {/* Main Grid split */}
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <div key="skel" className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8 bg-white dark:bg-[#0B121F]/80 rounded-[28px] p-6 border border-slate-200 dark:border-slate-800 h-96 animate-pulse"></div>
+            <div className="lg:col-span-4 bg-white dark:bg-[#0B121F]/80 rounded-[28px] p-6 border border-slate-200 dark:border-slate-800 h-80 animate-pulse"></div>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {filteredPopular.map((brand) => (
-              <button
-                key={brand.id}
-                onClick={() => handleCardClick(brand)}
-                className="bg-white border border-[#E2E8F0] p-5 rounded-[24px] flex flex-col items-center text-center gap-3 hover:border-slate-300 hover:shadow-md transition-all active:scale-95 group"
-              >
-                <div className={`w-14 h-14 rounded-2xl bg-slate-900 border border-white/15 flex items-center justify-center text-white font-extrabold text-lg shadow-inner group-hover:scale-105 transition-transform ${brand.id === 'apple' ? 'bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500' : ''}`}>
-                  {brand.image === 'Amazon' && <span className="text-yellow-500 font-mono italic">a</span>}
-                  {brand.image === 'Apple' && <span className="font-sans"></span>}
-                  {brand.image === 'Google' && <span className="text-emerald-400">G</span>}
-                  {brand.image === 'Netflix' && <span className="text-rose-600">N</span>}
-                </div>
-                <span className="text-sm font-bold text-[#0F172A]">{brand.name}</span>
-                <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 bg-slate-100 text-neutral-muted rounded-full">vouchers</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Categories Section */}
-        <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-muted">Categories</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {CATEGORIES.map((cat) => (
-              <div 
-                key={cat.id}
-                className="bg-white border border-[#E2E8F0] p-4 rounded-[20px] flex items-center gap-3 hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <div className={`w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center shrink-0`}>
-                  <cat.icon className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-bold text-[#0F172A] tracking-tight">{cat.label}</span>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column (Brand Catalog grid) */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all text-slate-900 dark:text-white shadow-xs"
+                  placeholder="Search gift cards e.g. Amazon, Netflix..."
+                />
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* Featured Section */}
-        <section className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-muted">Featured Deals</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredFeatured.map((card) => (
-              <button
-                key={card.id}
-                onClick={() => handleCardClick(card)}
-                className={`bg-gradient-to-r ${card.grad} p-6 rounded-[24px] text-white flex justify-between items-center text-left hover:shadow-lg hover:shadow-slate-200 transition-all active:scale-[0.99] group`}
-              >
-                <div className="space-y-2">
-                  <span className="text-[10px] uppercase font-bold tracking-widest bg-white/10 px-2 py-1 rounded-full border border-white/10">Instant Delivery</span>
-                  <h4 className="text-lg font-extrabold tracking-tight pt-1">{card.name}</h4>
-                  <p className="text-xs text-white/70 font-semibold">{card.label}</p>
-                </div>
-                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition-all shrink-0">
-                  <ArrowUpRight className="w-5 h-5" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      {/* Slide-up Purchase Drawer */}
-      <AnimatePresence>
-        {selectedBrand && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="w-full max-w-sm bg-white rounded-t-[32px] border-t border-[#E2E8F0] pb-safe shadow-2xl relative"
-            >
-              <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto my-4" />
-              
-              <div className="p-6 pt-0 space-y-6">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-[#0F172A]">Configure Voucher</span>
-                  </div>
-                  <button 
-                    onClick={() => setSelectedBrand(null)}
-                    className="text-xs bg-slate-100 hover:bg-slate-200 text-neutral-muted py-1.5 px-3 rounded-full transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
-
-                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black">
-                    {selectedBrand.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-[#0F172A]">{selectedBrand.name}</h3>
-                    <p className="text-xs text-neutral-muted font-medium">Digital Gift Card</p>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="p-3 bg-rose-50 border border-rose-100 text-status-error text-xs rounded-xl flex items-center gap-2 font-medium">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <p>{error}</p>
-                  </div>
-                )}
-
-                <form onSubmit={handlePurchaseSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-neutral-muted">Pick Amount</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {selectedBrand.presets.map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => setAmount(preset)}
-                          className={`p-3 text-xs font-bold border-2 rounded-xl transition-all ${
-                            amount === preset 
-                              ? 'border-primary bg-primary/5 text-primary' 
-                              : 'border-slate-100 bg-white hover:border-slate-300'
-                          }`}
-                        >
-                          ₦{preset.toLocaleString()}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-neutral-muted">Deliver to email</label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-neutral-muted absolute left-4.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-primary/10 select-all"
-                        placeholder="your-email@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
+              {/* Popular section */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider pl-1">Popular Brands</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {filteredPopular.map((brand) => (
                     <button
-                      type="submit"
-                      disabled={isProcessing}
-                      className="w-full bg-[#0F172A] hover:bg-black text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-sm transition-all shadow-md active:scale-95"
+                      key={brand.id}
+                      onClick={() => handleCardClick(brand)}
+                      className={`bg-white dark:bg-[#0B121F]/80 border border-slate-200 dark:border-slate-800 p-5 rounded-[26px] flex flex-col items-center text-center gap-4 hover:border-blue-500/20 dark:hover:border-blue-500/30 hover:shadow-md transition-all active:scale-95 group cursor-pointer ${
+                        selectedBrand?.id === brand.id ? 'ring-2 ring-blue-600 dark:ring-blue-500 bg-slate-50/50 dark:bg-slate-800/40' : ''
+                      }`}
                     >
-                      <span>Authorize with passcode</span>
+                      <div className={`w-14 h-14 rounded-2xl bg-slate-950 border border-white/10 flex items-center justify-center text-white font-extrabold text-xl shadow-inner group-hover:scale-105 transition-transform ${brand.id === 'apple' ? 'bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500' : ''}`}>
+                        {brand.image === 'Amazon' && <span className="text-yellow-500 font-mono italic">a</span>}
+                        {brand.image === 'Apple' && <span className="font-sans"></span>}
+                        {brand.image === 'Google' && <span className="text-emerald-400">G</span>}
+                        {brand.image === 'Netflix' && <span className="text-rose-600">N</span>}
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block">{brand.name}</span>
+                        <span className="text-[9px] uppercase tracking-wider font-black px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-full mt-2 inline-block">Vouchers</span>
+                      </div>
                     </button>
-                  </div>
-                </form>
+                  ))}
+                </div>
               </div>
-            </motion.div>
+
+              {/* Featured Section */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider pl-1">Featured e-Voucher Deals</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredFeatured.map((card) => (
+                    <button
+                      key={card.id}
+                      onClick={() => handleCardClick(card)}
+                      className={`bg-gradient-to-r ${card.grad} p-6 rounded-[28px] text-white flex justify-between items-center text-left hover:shadow-lg transition-all active:scale-[0.99] group cursor-pointer`}
+                    >
+                      <div className="space-y-1.5">
+                        <span className="text-[9px] uppercase font-bold tracking-widest bg-white/15 px-2.5 py-0.5 rounded-full border border-white/10">Instant Delivery</span>
+                        <h4 className="text-base font-extrabold tracking-tight pt-1">{card.name}</h4>
+                        <p className="text-xs text-white/70 font-semibold">{card.label}</p>
+                      </div>
+                      <div className="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition-all shrink-0">
+                        <ArrowUpRight className="w-4.5 h-4.5" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column (Instant configuration and Checkout form panel) */}
+            <div className="lg:col-span-4">
+              <AnimatePresence mode="wait">
+                {selectedBrand ? (
+                  <motion.div 
+                    key="config-form"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="bg-white dark:bg-[#0B121F]/80 rounded-[32px] p-6 border border-slate-200 dark:border-slate-800 shadow-[0_8px_30px_rgba(0,0,0,0.01)] space-y-6"
+                  >
+                    <div className="border-b border-slate-200/60 dark:border-slate-800 pb-3">
+                      <span className="text-xs font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">Checkout Configuration</span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-xl bg-slate-900 dark:bg-[#0E1626] border border-slate-850 text-white flex items-center justify-center font-black">
+                        {selectedBrand.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-xs text-slate-900 dark:text-white">{selectedBrand.name}</h3>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold tracking-wider uppercase mt-0.5">e-voucher code delivery</p>
+                      </div>
+                    </div>
+
+                    {error && (
+                      <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-900/40 text-rose-800 dark:text-rose-300 text-[11px] rounded-xl flex items-center gap-2 font-semibold animate-shake">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <p>{error}</p>
+                      </div>
+                    )}
+
+                    <form onSubmit={handlePurchaseSubmit} className="space-y-5">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-1">Pick Amount</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {selectedBrand.presets.map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setAmount(preset)}
+                              className={`p-3 text-[10px] font-bold border rounded-xl transition-all cursor-pointer ${
+                                amount === preset 
+                                  ? 'border-blue-600 dark:border-blue-500 bg-blue-50/20 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-xs' 
+                                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850/30 text-slate-900 dark:text-white'
+                              }`}
+                            >
+                              ₦{preset.toLocaleString()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 pl-1">Delivery Email</label>
+                        <div className="relative">
+                          <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800/40 border-none rounded-xl text-xs font-bold outline-none focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/10 text-slate-900 dark:text-white placeholder-slate-400"
+                            placeholder="your-email@example.com"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className="w-full bg-slate-900 dark:bg-blue-600 hover:bg-black dark:hover:bg-blue-500 text-white py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 text-xs transition-all shadow-md active:scale-95 mt-2 cursor-pointer"
+                      >
+                        <span>Authorize with PIN</span>
+                      </button>
+                    </form>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="config-placeholder"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="bg-slate-50/50 dark:bg-slate-800/20 border border-slate-200 dark:border-slate-800 rounded-[28px] p-6 space-y-4 text-center py-10"
+                  >
+                    <div className="w-12 h-12 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shrink-0 mx-auto shadow-inner">
+                      <Gift className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider">Configure voucher</h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold leading-relaxed mt-2 max-w-xs mx-auto">
+                        Pick any international e-voucher brand card from the catalog list to configure delivery channels and checkout secure pins.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         )}
       </AnimatePresence>

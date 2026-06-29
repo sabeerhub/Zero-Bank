@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, 
   ArrowUpRight, 
@@ -17,10 +17,13 @@ import {
   Gift,
   PiggyBank,
   CreditCard,
-  User
+  User,
+  Filter,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { format, isSameDay, isYesterday, startOfMonth, isWithinInterval, subDays } from 'date-fns';
 import jsPDF from 'jspdf';
@@ -36,6 +39,7 @@ export default function Transactions() {
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'credit' | 'debit'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<any | null>(
     location.state?.selectedTx || null
   );
@@ -52,8 +56,10 @@ export default function Transactions() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTransactions(txs);
+      setIsLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'transactions');
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -162,11 +168,11 @@ export default function Transactions() {
     if (!initials) initials = 'TX';
     
     const colors = [
-      'bg-[#EBF5FF] text-[#2563EB]',
-      'bg-[#F0FDF4] text-[#16A34A]',
-      'bg-[#FFF5EB] text-[#FF8A00]',
-      'bg-[#F5F3FF] text-[#7C3AED]',
-      'bg-[#EFF6FF] text-[#3B82F6]'
+      'bg-blue-50 text-[#2563EB]',
+      'bg-emerald-50 text-[#16A34A]',
+      'bg-amber-50 text-[#FF8A00]',
+      'bg-purple-50 text-[#7C3AED]',
+      'bg-sky-50 text-[#0284C7]'
     ];
     
     const hash = tx.description.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
@@ -261,158 +267,219 @@ export default function Transactions() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-sans w-full max-w-md mx-auto px-6">
-      {/* Header */}
-      <header className="pt-8 pb-4 flex items-center justify-between">
-        <button 
-          onClick={() => navigate('/')} 
-          className="w-10 h-10 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all shadow-sm"
-        >
-          <ArrowLeft className="w-5 h-5 text-[#0F172A]" />
-        </button>
+    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-sans text-[#0F172A] w-full max-w-7xl mx-auto px-4 md:px-8">
+      {/* Premium Header */}
+      <header className="pt-8 pb-6 flex items-center justify-between border-b border-slate-100/80 mb-8">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/')} 
+            className="w-11 h-11 rounded-2xl bg-white border border-[#E2E8F0] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all shadow-sm group"
+          >
+            <ArrowLeft className="w-5 h-5 text-[#0F172A] group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">Ledger Statement</h1>
+            <p className="text-[11px] text-neutral-muted font-bold tracking-wide uppercase mt-0.5">Comprehensive transaction history</p>
+          </div>
+        </div>
         
         <button 
           onClick={downloadStatement} 
-          className="p-2.5 bg-[#EBF5FF] text-[#2563EB] rounded-xl hover:bg-blue-100 active:scale-95 transition-all font-bold text-xs flex items-center gap-1.5"
-          title="Export CSV / PDF"
+          disabled={filteredTransactions.length === 0}
+          className="p-3 bg-[#2563EB] text-white hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 rounded-2xl shadow-md active:scale-95 transition-all font-bold text-xs flex items-center gap-2 border border-blue-600/20"
+          title="Export PDF Statement"
         >
           <Download className="w-4 h-4" strokeWidth={2.5} />
-          <span>Statement</span>
+          <span>Download PDF</span>
         </button>
       </header>
 
-      {/* Main Title Section */}
-      <div className="mt-2 mb-6">
-        <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">History</h1>
-      </div>
-
-      <main className="space-y-5">
-        {/* Money Flows Category Pills - exactly like image design */}
-        <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1">
-          <button 
-            type="button"
-            onClick={() => setTypeFilter('all')}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-              typeFilter === 'all' 
-                ? 'bg-[#2563EB] text-white shadow-sm' 
-                : 'bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]'
-            }`}
-          >
-            All
-          </button>
-          <button 
-            type="button"
-            onClick={() => setTypeFilter('credit')}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-              typeFilter === 'credit' 
-                ? 'bg-[#2563EB] text-white shadow-sm' 
-                : 'bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]'
-            }`}
-          >
-            Money In
-          </button>
-          <button 
-            type="button"
-            onClick={() => setTypeFilter('debit')}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-              typeFilter === 'debit' 
-                ? 'bg-[#2563EB] text-white shadow-sm' 
-                : 'bg-white border border-[#E2E8F0] text-[#64748B] hover:text-[#0F172A]'
-            }`}
-          >
-            Money Out
-          </button>
-        </div>
-
-        {/* Beautiful Pristine Search Input - directly matching design */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#94A3B8]" />
-          <input 
-            type="text"
-            placeholder="Search transactions"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-11 pr-4 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl text-xs font-semibold placeholder-[#94A3B8] focus:border-primary outline-none transition-all shadow-sm"
-          />
-        </div>
-
-        {/* Ledger list */}
-        <div className="space-y-6 pt-2">
-          {filteredTransactions.length === 0 ? (
-            <div className="bg-white rounded-[28px] p-12 text-center border border-[#E2E8F0] flex flex-col items-center shadow-sm">
-              <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center mb-4">
-                <FileText className="w-6 h-6 text-slate-300" />
-              </div>
-              <h3 className="text-xs font-bold text-[#0F172A]">No transfers found</h3>
-              <p className="text-[10px] text-neutral-muted mt-1 leading-relaxed">
-                We couldn't locate any transactions matching your parameters.
-              </p>
+      {/* Main Responsive Layout Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column (Interactive Filter Toolbar Sidebar) */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] space-y-6">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Filter className="w-4 h-4 text-primary" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-neutral-muted">Filters & Search</h3>
             </div>
-          ) : (
-            groupedTransactions.map(([date, txs]) => {
-              const txDate = new Date(date);
-              let heading = format(txDate, 'MMMM dd, yyyy');
-              if (isSameDay(txDate, new Date())) {
-                heading = 'Today';
-              } else if (isYesterday(txDate)) {
-                heading = 'Yesterday';
-              }
 
-              return (
-                <div key={date} className="space-y-3">
-                  <h3 className="text-[10px] font-black uppercase text-neutral-muted tracking-wider pl-1">
-                    {heading}
-                  </h3>
-                  
-                  <div className="bg-white rounded-3xl border border-[#E2E8F0] overflow-hidden p-1 shadow-sm divide-y divide-[#F1F5F9]">
-                    {txs.map((tx) => {
-                      const isCredit = tx.type === 'credit';
-                      const details = getTxIconDetails(tx);
-                      
-                      return (
-                        <div 
-                          key={tx.id} 
-                          onClick={() => setSelectedTransaction(tx)}
-                          className="p-3.5 flex items-center justify-between hover:bg-[#F8FAFC] rounded-[22px] transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-4.5 flex-1 min-w-0 pr-4">
-                            {/* Colorful responsive avatar representation exactly like mockup */}
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-xs tracking-tight ${details.style}`}>
-                              {details.icon ? (
-                                <details.icon className="w-5 h-5" strokeWidth={2.2} />
-                              ) : (
-                                <span>{details.initials}</span>
-                              )}
-                            </div>
-                            
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-[#0F172A] truncate group-hover:text-primary transition-colors leading-snug">
-                                {tx.description}
-                              </p>
-                              <p className="text-[10px] font-semibold text-neutral-muted leading-relaxed mt-0.5">
-                                {isCredit ? 'Money In' : tx.category || 'Transfer'}
-                              </p>
-                            </div>
-                          </div>
+            {/* Premium Pristine Search Bar */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-neutral-muted">Search Description</label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400" />
+                <input 
+                  type="text"
+                  placeholder="Search transactions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50 focus:bg-white border-none focus:ring-2 focus:ring-primary/25 rounded-2xl text-xs font-bold text-[#0F172A] outline-none transition-all placeholder-slate-400"
+                />
+              </div>
+            </div>
 
-                          <div className="text-right shrink-0">
-                            <p className={`text-xs font-extrabold ${isCredit ? 'text-[#16A34A]' : 'text-[#0F172A]'}`}>
-                              {isCredit ? '+' : '-'}{formatCurrency(tx.amount)}
-                            </p>
-                            <p className="text-[9px] font-semibold text-neutral-muted mt-0.5 leading-snug">
-                              {format(new Date(tx.date), 'h:mm a')}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })
-          )}
+            {/* Money flows filter */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-neutral-muted">Money Flow Category</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['all', 'credit', 'debit'] as const).map(f => (
+                  <button 
+                    key={f}
+                    onClick={() => setTypeFilter(f)}
+                    className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all text-center ${
+                      typeFilter === f 
+                        ? 'bg-[#0F172A] border-slate-900 text-white shadow-sm' 
+                        : 'bg-slate-50 hover:bg-slate-100 border-transparent text-[#64748B]'
+                    }`}
+                  >
+                    {f === 'all' ? 'All' : f === 'credit' ? 'In' : 'Out'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date period filters */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-neutral-muted">Statement Period</label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['all', 'today', 'week', 'month'] as const).map(d => (
+                  <button 
+                    key={d}
+                    onClick={() => setDateFilter(d)}
+                    className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all text-center ${
+                      dateFilter === d 
+                        ? 'bg-[#0F172A] border-slate-900 text-white shadow-sm' 
+                        : 'bg-slate-50 hover:bg-slate-100 border-transparent text-[#64748B]'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+
+        {/* Right Column (Ledger Records lists) */}
+        <div className="lg:col-span-8">
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <div key="shimmer" className="space-y-6">
+                {[1, 2].map(g => (
+                  <div key={g} className="space-y-3">
+                    <div className="h-4 bg-slate-200 rounded w-24 animate-pulse"></div>
+                    <div className="bg-white border border-slate-100 rounded-3xl p-2 space-y-2">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className="h-14 bg-slate-100 rounded-2xl animate-pulse"></div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredTransactions.length === 0 ? (
+              <motion.div 
+                key="empty-ledger"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="bg-white rounded-[28px] p-12 text-center border border-slate-100 flex flex-col items-center justify-center shadow-sm"
+              >
+                <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-5 shadow-inner">
+                  <FileText className="w-7 h-7 text-slate-300" />
+                </div>
+                <h3 className="text-sm font-black text-[#0F172A]">No Ledger records found</h3>
+                <p className="text-xs text-neutral-muted mt-1.5 leading-relaxed max-w-sm">
+                  We couldn't locate any transaction history matching the selected search query or statement parameters.
+                </p>
+                <button 
+                  onClick={() => { setTypeFilter('all'); setDateFilter('all'); setSearchQuery(''); }}
+                  className="mt-6 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-[#0F172A] font-extrabold text-xs rounded-xl transition-all"
+                >
+                  Clear Active Filters
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="ledger-data"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
+              >
+                {groupedTransactions.map(([date, txs]) => {
+                  const txDate = new Date(date);
+                  let heading = format(txDate, 'MMMM dd, yyyy');
+                  if (isSameDay(txDate, new Date())) {
+                    heading = 'Today';
+                  } else if (isYesterday(txDate)) {
+                    heading = 'Yesterday';
+                  }
+
+                  return (
+                    <div key={date} className="space-y-3.5">
+                      <h3 className="text-[10px] font-black uppercase text-neutral-muted tracking-wider pl-1.5 flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        <span>{heading}</span>
+                      </h3>
+                      
+                      <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden p-1.5 shadow-[0_4px_24px_rgba(0,0,0,0.01)] divide-y divide-slate-100/50">
+                        {txs.map((tx) => {
+                          const isCredit = tx.type === 'credit';
+                          const details = getTxIconDetails(tx);
+                          
+                          return (
+                            <div 
+                              key={tx.id} 
+                              onClick={() => setSelectedTransaction(tx)}
+                              className="p-4 flex items-center justify-between hover:bg-[#F8FAFC] rounded-[22px] transition-all cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-4.5 flex-1 min-w-0 pr-4">
+                                {/* Category Avatar Badge Representation */}
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-xs tracking-tight ${details.style} shadow-inner`}>
+                                  {details.icon ? (
+                                    <details.icon className="w-5 h-5" strokeWidth={2.2} />
+                                  ) : (
+                                    <span>{details.initials}</span>
+                                  )}
+                                </div>
+                                
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-bold text-[#0F172A] truncate group-hover:text-[#2563EB] transition-colors leading-snug">
+                                    {tx.description}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[9px] font-bold text-neutral-muted leading-relaxed uppercase tracking-wider">
+                                      {isCredit ? 'Credit In' : tx.category || 'De-bit'}
+                                    </span>
+                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                    <span className="text-[9px] font-mono font-medium text-slate-400">
+                                      Ref: {tx.reference ? tx.reference.substring(0, 10) : tx.id.substring(0, 6)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <p className={`text-xs font-black ${isCredit ? 'text-emerald-600' : 'text-[#0F172A]'}`}>
+                                  {isCredit ? '+' : '-'}{formatCurrency(tx.amount)}
+                                </p>
+                                <p className="text-[9px] font-bold text-neutral-muted mt-0.5 leading-snug">
+                                  {format(new Date(tx.date), 'h:mm a')}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }
